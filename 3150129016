@@ -1,4 +1,4 @@
-
+###################最速下降法搜索目标函数的极小点和极小值
 #####回溯法搜索步长
 function inexact_method(f, g, ϕ0, ϕd0, xk, dk ;τ=0.5, ϵ=0.5, ζ=2 )
     α = 1
@@ -66,7 +66,7 @@ gradient_descent(
 
 
 
-####牛顿法搜索目标函数的极小点和极小值
+#######################牛顿法搜索目标函数的极小点和极小值
 function newton(f,g,H,x0;ϵ=0.0001,maxIterration=128)
     x = x0
     ng=norm(g(x...))
@@ -100,6 +100,8 @@ newton(
 
 
 
+
+####################Levenberg-Marquardt 改进算法
 #####回溯法搜索步长
 function inexact_method(f, g, H, ϕ0, ϕd0, xk, dk ;τ=0.5, ϵ=0.5, ζ=2 )
     α = 1
@@ -115,10 +117,6 @@ function inexact_method(f, g, H, ϕ0, ϕd0, xk, dk ;τ=0.5, ϵ=0.5, ζ=2 )
     end
     return α    
 end
-
-
-
-
 
 ####Levenberg-Marquardt 改进算法
 function Levenberg_Marquardt(f,g,H,x0;u=eps(),ϵ=0.0001,maxIterration=1500)
