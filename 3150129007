@@ -1,0 +1,86 @@
+###梯度下降法
+function gradient_descent(f,g,x0;
+        ϵg=0.0001,ϵx=0.0001,ϵf=0.0001,maxIteractions=200,verbose=true)
+    x1 = x0
+    d  = -g(x1...)
+    f1 = f(x1...)
+    ng = norm(d)
+    α = inexact_method( f, g, f1, -ng'*ng, x1, d)
+    x2 = x1+α.*d
+    f2 = f(x2...)
+    nx = α*ng
+    ni = 1
+    println("step:",ni,"   x:",x2,"   f:",f2)
+    while((ng>ϵg || nx>ϵx || abs(f2-f1)>ϵf )&& ni<maxIteractions )
+        x1 = x2
+        d  = -g(x1...)
+        f1 = f2
+        ng = norm(d)
+        α = inexact_method(f,g,f1,-ng'*ng,x1,d)
+        x2 = x1+α.*d
+        f2 = f(x2...)
+        nx = α*ng                  
+        ni+= 1
+        if verbose
+            println("step:",ni,"   x:",x2,"   f:",f2)
+            println("   d:" ,d,"  α:",α)
+        end
+    end
+    if ni>=maxIteractions
+        println("warning:Iteractions exceeds",maxIteractions)
+    end
+    return x2,f2
+end
+
+function inexact_method(f,g,ϕ0,ϕd0,xk,dk;τ=0.5,ϵ=0.5,ζ=2)
+    α =1
+    dα=dk'*g((xk.+α.*dk)...)
+    while norm(dα)<eps()
+        α = ζ*α
+        dα= dk'*g((xk.+α.*dk)...)
+    end
+    ϕα=f((xk.+α.*dk)...)
+    while(ϕα>ϕ0+ϵ*α*ϕd0)
+        α =τ*α
+        ϕα=f((xk.+α.*dk)...)
+    end
+    return α 
+end
+
+###牛顿法
+function Newton_search(f,g,h,x0,ε=eps(),maIterations=200)
+    x=x0
+    xg= g(x...)
+    xh= h(x...)
+    xf= f(x...)
+    i = 0
+    while (norm(xg)>=ε&& i<=maIterations)
+        i+=1
+        println("i = $i, x = $x, xg = $xg, xf = $xf")
+        xf= f(x...)
+        xg = g(x...)
+        xh = h(x...)
+        xh_1=inv(xh)
+        x = x-xh_1*xg
+    end
+    return  x, xg, xf
+end
+
+###Levenberg-Marquardt
+function Levenberg_Marquardt(f,g,h,x0,u,ε=eps(),maIterations=1000)
+    x=x0
+    xf= f(x...)
+    xg= g(x...)
+    xh= h(x...)
+    x = x-inv(xh+u*I)*xg
+    i = 0
+    while (norm(xg)>=ε && i<=maIterations)
+        i+=1
+        println("i = $i, x = $x, xg = $xg, xf = $xf")
+        xf =f(x...)
+        xh = h(x...)
+        xg = g(x...)
+        x = x-inv(xh+u*I)*xg
+    end
+    return  x, xg,xf
+end
