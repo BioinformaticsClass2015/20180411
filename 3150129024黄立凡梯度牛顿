@@ -1,0 +1,118 @@
+####################梯度法#######################
+function inexact_method(f,g,ϕ0,ϕd0,xk,dk;  ##原函数、一阶导、上一点值、α函数一阶为零值、初始点、负梯度（反方向）；
+        τ=0.5,ϵ=0.5,ζ=2)
+    α=1
+    dα=dk'*g((xk.+α.*dk)...)   ##一阶导数；  
+    while dα<0                  ##判断α是否足够大；
+        α=ζ*α
+        dα=dk'*g((xk.+α.*dk)...)
+    end
+    ϕα=f((xk.+α.*dk)...)      ##α的原函数值；
+    while(ϕα>ϕ0+ϵ*α*ϕd0)     ##判断α是否不会太大；
+        α=τ*α
+        ϕα=f((xk.+α.*dk)...)
+    end
+    return α
+end
+
+function gradient_descent(f,g,x0;#α0=0.1,
+        ϵg=0.001,ϵx=0.001,ϵf=0.001,maxIterations=128,verbose=true)
+    x1=x0
+    d=-g(x1...)
+    f1=f(x1...)
+    #Inexact method for a
+    α=inexact_method(f,g,f0,-norm(d)'*norm(d),x0,d)
+    x2=x1+α.*d
+    f2=f(x2...)
+    ng=norm(d)
+    nx=α*ng
+    ni=1
+    while(ng>ϵg || nx>ϵx || abs(f2-f1)>ϵf && ni<maxIterations)
+        x1=x2
+        d=-g(x1...)
+        f1=f2
+        α=α0#inexact_method()
+        x2=x1+α.*d
+        f2=f(x2...)
+        ng=norm(d)
+        nx=α*ng
+        ni+=1
+        if verbose
+            println("Step ",ni," x ",x2," f ",f2)
+            println("      d ",d," α ",α)
+        end
+    end
+    if ni>=maxIterations
+        println("WANRING:iteration exceeds",maxIterations)
+    else
+        println("LOG:iteration convrges after ",ni," Step")
+    end
+    return x2,f2
+end
+
+
+gradient_descent((x,y)->(1-x)^2+100*(y-x^2)^2,(x,y)->[2(x-1)-400*x*(y-x^2) *x 200*(y-x^2)]',[2 2]',α0=0.001
+)
+
+
+######################梯度作业求解Rosenbrock函数#####################
+gradient_descent(
+(x,y)->(1-x)^2+100*(y-x^2)^2,
+(x,y)->[-2*(1-x)-400x*(y-x^2) 200(y-x^2)]',#vector value
+    [1.2 1.6]'
+    )
+  
+  
+  
+
+#############################多维牛顿法################################
+function Duoweiniudun(f,g,h,x0,n,maxIterations=5)####
+    x=x0
+    i=0
+    
+    ng=norm(g(x0...))
+    while(ng>n&& i<=maxIterations)
+        i+=1
+        println(i,"\t","x=",x)
+        x=x-inv(h(x...))*g(x...)
+     
+    end
+    return (x,f(x...))
+end
+
+Duoweiniudun((x,y)->(1-x)^2+100*(y-x^2)^2,
+    (x,y)->[-2*(1-x)-400*x*(y-x^2) 200*(y-x^2)]',
+    (x,y)->[2+800*x^2-400*(y-x^2)-400*x -400*x;-400*x 200],
+     [0 0]',0.001)
+     
+    
+################Levenberg-Marquardt 改进算法##################     
+
+
+function Levenberg-Marquardt(f,g,h,x0;
+        ϵ=eps(),maxstep=128)     
+        i = 0
+        while abs(norm(g(x0...))) > ϵ && i < maxstep
+            i += 1
+            α=0.1
+            μ=0.0001
+            println("step = ",i,"\t","x = ",x0,"\t","derivattive = ",g(x0...))
+            x0 = x0 -α*(inv(h(x0...)+μ*eye(size(h(x0...))[1])))*g(x0...)
+        end
+        return x0,f(x0...),g(x0...)
+    end
+end
+
+ Levenberg-Marquardt((x,y)->(1-x)^2+100*(y-x^2)^2,
+    (x,y)->[-2*(1-x)-400*x*(y-x^2) 200*(y-x^2)]',
+    (x,y)->[2+800*x^2-400*(y-x^2)-400*x -400*x;-400*x 200],
+     [0 0]',0.001)
+     
+     
+######################牛顿作业求解Rosenbrock函数#####################
+Duoweiniudun(
+(x,y)->(1-x)^2+100*(y-x^2)^2,
+(x,y)->[-2*(1-x)-400x*(y-x^2) 200(y-x^2)]',#vector value
+    [1.2 1.6]'
+    )
+  
