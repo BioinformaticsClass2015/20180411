@@ -1,0 +1,112 @@
+##梯度法
+
+function inexact_method(f,g,ϕ0,ϕd0,xk,dk;τ=0.5,ε=0.5,ζ=2)
+    α=1
+    dα=dk'*g((xk.+α*dk)...)
+    while dα<0
+        α=ζ*α
+        dα=dk'*g((xk.+α*dk)...)
+    end
+    ϕα=f((xk.+α* dk)...)
+    while (ϕα>ϕ0+ε*ϕd0*α)
+        α=τ*α
+        ϕα=f((xk.+α*dk)...)
+    end
+    return α
+end
+function gradient_descent(f,g,x0;ϵg=0.0001,ϵx=0.0001,ϵf=0.0001,maxIterations=128,verbose=true)
+    x1=x0
+    d=-g(x1...)
+    f1=f(x1...)
+    ng=norm(d)
+    #Inexact method for a
+    a=inexact_method(f,g,f1,-ng*ng,x1,d;τ=0.5,ε=0.5,ζ=2)
+    x2=x1+a.*d
+    f2=f(x2...)
+    ni=1
+    if verbose
+            println("Step=",ni," x=",x2," f=",f2)
+            println("      d=",d," α=",a)
+    end
+    nx=a*ng
+    while((ng>ϵg || nx>ϵx || abs(f2-f1)>ϵf)&& ni<maxIterations)
+        x1=x2
+        d=-g(x1...)
+        f1=f2
+        a=inexact_method(f,g,f1,-ng*ng,x1,d;τ=0.5,ε=0.5,ζ=2)
+        x2=x1+a.*d
+        f2=f(x2...)
+        ng=norm(d)
+        nx=a*ng
+        ni+=1
+        if verbose
+            println("Step=",ni," x=",x2," f=",f2)
+            println("      d=",d," α=",a)
+        end
+    end
+    if ni>=maxIterations
+        println("WANRING:iteration exceeds",maxIterations)
+    else
+        println("LOG:iteration convrges after ",ni," Step")
+    end
+    return x2,f2
+end
+##多元牛顿
+function Newton_method(f,g1,g2,x0;ϵg=0.0001,maxIterations=128)
+    n=1
+    h=g2(x0...)
+    if det(h)==0
+        println("ERROR : H Matrix irreversible! Can't use Newton! ")
+    else
+        x1=x0.-inv(h)*g1(x0...)
+    end
+    println("Step=",n," x=",x1," f=",f(x1...))
+    while (abs(f(x1...)-f(x0...))>ϵg && n<maxIterations)
+        x0=x1
+        h=g2(x0...)
+        if det(h)==0 
+            println("ERROR : H Matrix irreversible! Can't use Newton! ")
+        else
+            x1=x0.-inv(h)*g1(x0...)
+            n=n+1
+            println("Step=",n," x=",x1," f=",f(x1...))
+        end
+    end
+    if n>=maxIterations
+        println("WANRING:iteration exceeds",maxIterations)
+    else
+        println("LOG:iteration convrges after ",n," Step")
+    end
+    return x1,f(x1...)
+end
+
+##Levenberg-Marquardt 改进算法
+function Newton_Levenberg_Marquardt(f,g1,g2,x0;ϵg=0.0001,maxIterations=128)
+    h=g2(x0...)
+    λ=0.1
+    x1=x0.-inv(h+λ*eye(h))*g1(x0...)
+    while f(x1...)-f(x0...)>0
+        λ=λ
+        x1=x0.-inv(h+λ*eye(h))*g1(x0...)
+    end
+    n=1
+    println("Step=",n," x=",x1," f=",f(x1...))
+    while (abs(f(x1...)-f(x0...))>ϵg && n<maxIterations)
+        x0=x1
+        h=g2(x0...)
+        λ=0
+        x1=x0.-inv(h+λ*eye(h))*g1(x0...)
+        while f(x1...)-f(x0...)>0
+            λ=λ+0.1
+            x1=x0.-inv(h+λ*eye(h))*g1(x0...)
+        end
+        n=n+1
+        println("Step=",n," x=",x1," f=",f(x1...))
+    end
+    if n>=maxIterations
+        println("WANRING:iteration exceeds",maxIterations)
+    else
+        println("LOG:iteration convrges after ",n," Step")
+    end
+    return x1,f(x1...)
+end
