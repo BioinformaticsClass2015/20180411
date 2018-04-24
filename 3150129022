@@ -1,0 +1,123 @@
+##########梯度法#############
+function inexact_method(f,g,φ0,φd0,xk,dk;τ=0.5,ε=0.5,ζ=2)
+    α=1
+    dα=dk*g((xk + α * dk)'...)'
+    while (dα<0)
+        α=ζ*α
+        dα=dk*g((xk + α* dk)'...)'
+    end
+    φα=f((xk+ α* dk)'...)
+    while (φα>φ0+ε+φd0*α)
+        α=τ*α
+        φα=f((xk + α* dk)'...)
+    end
+    return α
+end
+ 
+ 
+ function gradient_descent(f,g,x0;
+        εg=0.001,εx=0.001,εf=0.001,maxIterations=2000,verboss=true)
+    x1=x0
+    d=-g(x1...)
+    f1=f(x1...)
+    ng= norm(d)
+    # Inexact method for |alpha
+    alpha = inexact_method(f,g,f1,-ng*ng,x1,d)
+    nx=alpha*ng
+    x2=x1+alpha .* d
+    f2=f(x2...)
+    ni=1
+    while((ng>εg||nx>εx||abs(f2-f1)>εf)&&ni<maxIterations)
+        x1=x2
+        d=-g(x1...)
+        f1=f2
+        ng=norm(d)
+        alpha = inexact_method(f,g,f1,-ng*ng,x1,d)
+        x2=x1+alpha .* d
+        f2=f(x2...)
+        nx=alpha*ng
+        ni+=1
+        if verboss                                      
+            println("step",ni," x ",x2," f ",f2)
+            println("        d  ",d,"   alpha ",alpha)
+        end
+        end  
+    if ni >=maxIterations
+        println("WARNING:interations exceeds ",maxIterations," steps before converges.")
+    else
+        println("LOG;interations converges after ",ni,"steps.")
+    end
+    return x2,f2
+end
+
+
+gradient_descent(
+    (x,y)->5*x^2+y^2+4*x*y-14*x-6*y+22,
+    (x,y)->[10*x+4*y-14,2*y+4*x-6]',[1,0]',
+    maxIterations=20000,
+    verboss=true
+)
+
+
+###########牛顿法###########
+function inexact_method(f,g,φ0,φd0,xk,dk;τ=0.5,ε=0.5,ζ=2)
+    α=1
+    dα=dk*g((xk + α * dk)'...)'
+    while (dα<0)
+        α=ζ*α
+        dα=dk*g((xk + α* dk)'...)'
+    end
+    φα=f((xk+ α* dk)'...)
+    while (φα>φ0+ε+φd0*α)
+        α=τ*α
+        φα=f((xk + α* dk)'...)
+    end
+    return α
+end
+
+
+function Newton(f,g,h,x0;
+        εg=0.001,εx=0.001,εf=0.001,maxIterations=2000,verboss=true)
+    x=x0
+    f1=f(x...)
+    g1=g(x...)
+    h1=h(x...)
+    d=-g1
+    ng=norm(d)
+    ni=1
+    
+    x1=x+inv(h1)*d
+    f2=f(x1...)
+    while(ng>εg||abs(f2-f1)>εf && ni<maxIterations)
+        if verboss
+            println("x=",x ,"\tderivative=",g1,"\tHessian=",h1)
+        end
+        λ=eigvals(h1)
+        k=0
+           for i =1:length(λ) 
+               min=k
+               if (λ[i]<0)
+                  println("Hessian matrix isn't positive definite matrix.\t")
+                  k=1
+               end
+               if (λ[i]<min)
+                   min=λ[i]
+               end
+           end
+        if (k==1)
+            h1=h1.+abs(min)
+            d=-g1
+            ng=norm(d)
+            alpha = inexact_method(f,g,f1,-ng*ng,x,d)
+            d=-alpha .* inv(h1) * g1'
+        end
+            f2=f1
+            x=x+inv(h1)*d
+            f1=f(x...)
+            g1=g(x...)   
+            h1=h(x...)
+            d=-g1
+            ni=ni+1
+        end
+        return x,g1,f1
+    end
